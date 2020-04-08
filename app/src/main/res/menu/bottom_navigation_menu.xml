@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_location"
+        android:enabled="true"
+        android:icon="@drawable/ic_city"
+        android:iconTint="#FFFFFF"
+        android:title="@string/my_city"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_search"
+        android:enabled="true"
+        android:icon="@drawable/ic_weather"
+        android:iconTint="#FFFFFF"
+        android:title="@string/Weather"
+        app:showAsAction="ifRoom" />
+
+</menu>
