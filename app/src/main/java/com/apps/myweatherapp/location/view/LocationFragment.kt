@@ -1,4 +1,4 @@
-package com.apps.myweatherapp.location
+package com.apps.myweatherapp.location.view
 
 import android.Manifest
 import android.app.AlertDialog
@@ -23,11 +23,15 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.apps.myweatherapp.R
+import com.apps.myweatherapp.location.model.Weather
+import com.apps.myweatherapp.location.model.WeatherModel
+import com.apps.myweatherapp.location.presenter.WeatherPresenterImpl
+import com.apps.myweatherapp.location.presenter.WeatherViewContract
+import com.apps.myweatherapp.network.NetworkRepository
 import com.bumptech.glide.Glide
 import com.google.android.gms.location.*
+import com.google.android.material.snackbar.Snackbar
 import com.shon.projects.payappmodel.utils.glide.networking.ApiClient
-import retrofit2.Call
-import retrofit2.Callback
 import retrofit2.Response
 import java.sql.Date
 import java.text.SimpleDateFormat
@@ -36,7 +40,7 @@ import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
 
 
-class LocationFragment : Fragment() {
+class LocationFragment : Fragment(), WeatherViewContract {
 
 
     private var mLocation: Location? = null
@@ -45,7 +49,7 @@ class LocationFragment : Fragment() {
     private var param2: String? = null
 
     companion object {
-        private val URL_IMG: String = "http://openweathermap.org/img/wn/"
+        private const val URL_IMG: String = "http://openweathermap.org/img/wn/"
     }
 
     private lateinit var dayList: RecyclerView
@@ -108,7 +112,11 @@ class LocationFragment : Fragment() {
     private fun setUpVariationList() {
         variationList.layoutManager =
             LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-        variationListAdapter = VariationListAdapter(filteredTempList, mContext)
+        variationListAdapter =
+            VariationListAdapter(
+                filteredTempList,
+                mContext
+            )
         variationList.adapter = variationListAdapter
         var dividerItemDecoration = DividerItemDecoration(
             context,
@@ -124,7 +132,11 @@ class LocationFragment : Fragment() {
 
     private fun setUpDayList() {
         dayList.layoutManager = LinearLayoutManager(context)
-        dayListAdapter = DayListAdapter(filteredList, mContext)
+        dayListAdapter =
+            DayListAdapter(
+                filteredList,
+                mContext
+            )
         dayList.adapter = dayListAdapter
         var dividerItemDecoration = DividerItemDecoration(
             context,
@@ -144,60 +156,16 @@ class LocationFragment : Fragment() {
 
     private fun loadWeatherData(lat: Double?, lon: Double?) {
         dataList.clear()
-        val call: Call<WeatherModel> =
-            ApiClient.getClient.getData(lat.toString(), lon.toString(), "metric")
 
-        call.enqueue(object : Callback<WeatherModel> {
+        val repository = NetworkRepository(ApiClient)
+        val presenter = WeatherPresenterImpl(this, repository)
 
-            override fun onResponse(
-                call: Call<WeatherModel>?,
-                response: Response<WeatherModel>?
-            ) {
-                val dataResponse = response?.body()
-                val responseData = dataResponse?.weather
-                responseData?.let { dataList.addAll(it) }
-                if (!responseData.isNullOrEmpty()) {
-                    dateCalc(dataList)
-                    timeCalc(dataList)
-                }
-                //dayList.adapter?.notifyDataSetChanged()
-                val dashboardData = dataList[0]
-                temp_city_txt.text =
-                    dashboardData.temperature.temperature.roundToInt().toString() + "\u00B0"
-                climate_city_txt.text = dashboardData.description[0].mainDescription
-                tempTxt.text = dashboardData.temperature.maxTemp.roundToInt().toString() + "/" +
-                        dashboardData.temperature.minTemp.roundToInt() + "\u00B0"
+        presenter.fetchWeather(lat, lon)
 
-
-                cityTxt.text = dataResponse?.city?.name
-
-                Glide
-                    .with(this@LocationFragment)
-                    .load(URL_IMG + dashboardData.description[0].icon + "@2x.png")
-                    .centerCrop()
-                    .into(img)
-
-                dayTxt.text = dayExtractor(dashboardData.timestamp)
-                minTxt.text = dashboardData.temperature.maxTemp.roundToInt().toString() + "\u00B0"
-                maxTxt.text = dashboardData.temperature.minTemp.roundToInt().toString() + "\u00B0"
-            }
-
-            override fun onFailure(call: Call<WeatherModel>?, t: Throwable?) {
-                println(t?.localizedMessage + t?.cause + t?.message)
-            }
-
-        })
     }
 
-    fun calculateDate(timestampbefore: Long, timestampAfter: Long) {
-        val date1 = Date(timestampbefore.toLong())
-        val date2 = Date(timestampAfter.toLong())
-        if (date1.after(date2)) {
-        } else {
-        }
-    }
 
-    fun dateCalc(dataList: ArrayList<Weather>) {
+    private fun dateCalc(dataList: ArrayList<Weather>) {
         filteredList.clear()
         var current: String = dataList[0].dateTxt.substring(0, 10)
         for (i in 0 until dataList.size) {
@@ -214,7 +182,7 @@ class LocationFragment : Fragment() {
         Log.i("size", filteredList.size.toString())
     }
 
-    fun timeCalc(dataList: ArrayList<Weather>) {
+    private fun timeCalc(dataList: ArrayList<Weather>) {
         filteredTempList.clear()
         for (items in 0 until 10) {
             filteredTempList.add(dataList[items])
@@ -354,5 +322,51 @@ class LocationFragment : Fragment() {
                 getLastLocation()
             }
         }
+    }
+
+    override fun displayWeatherResults(response: WeatherModel) {
+        val responseData = response?.weather
+        responseData?.let { dataList.addAll(it) }
+        if (!responseData.isNullOrEmpty()) {
+            dateCalc(dataList)
+            timeCalc(dataList)
+        }
+        //dayList.adapter?.notifyDataSetChanged()
+        val dashboardData = dataList[0]
+        temp_city_txt.text =
+            dashboardData.temperature.temperature.roundToInt().toString() + "\u00B0"
+        climate_city_txt.text = dashboardData.description[0].mainDescription
+        tempTxt.text = dashboardData.temperature.maxTemp.roundToInt().toString() + "/" +
+                dashboardData.temperature.minTemp.roundToInt() + "\u00B0"
+
+
+        cityTxt.text = response?.city?.name
+
+        Glide
+            .with(this@LocationFragment)
+            .load(URL_IMG + dashboardData.description[0].icon + "@2x.png")
+            .centerCrop()
+            .into(img)
+
+        dayTxt.text = dayExtractor(dashboardData.timestamp)
+        minTxt.text = dashboardData.temperature.maxTemp.roundToInt().toString() + "\u00B0"
+        maxTxt.text = dashboardData.temperature.minTemp.roundToInt().toString() + "\u00B0"
+    }
+
+
+
+    override fun displayError() {
+        view?.rootView?.let {
+            Snackbar.make(
+                it,
+                "Error loading data from Repository",
+                Snackbar.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+
+    override fun displayError(s: String?) {
+        view?.rootView?.let { Snackbar.make(it, s.toString(), Snackbar.LENGTH_SHORT).show() }
     }
 }

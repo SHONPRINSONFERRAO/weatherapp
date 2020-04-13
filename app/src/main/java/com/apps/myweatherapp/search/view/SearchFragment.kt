@@ -1,4 +1,4 @@
-package com.apps.myweatherapp.search
+package com.apps.myweatherapp.search.view
 
 import android.content.Context
 import android.os.Bundle
@@ -12,13 +12,20 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.apps.myweatherapp.R
+import com.apps.myweatherapp.location.model.WeatherModel
+import com.apps.myweatherapp.location.presenter.WeatherPresenterImpl
+import com.apps.myweatherapp.network.NetworkRepository
+import com.apps.myweatherapp.search.model.CityDataModel
+import com.apps.myweatherapp.search.presenter.SearchPresenterImpl
+import com.apps.myweatherapp.search.presenter.SearchViewContract
+import com.google.android.material.snackbar.Snackbar
 import com.shon.projects.payappmodel.utils.glide.networking.ApiClient
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 
-class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
+class SearchFragment : Fragment(), SearchView.OnQueryTextListener, SearchViewContract {
 
     private lateinit var mContext: Context
     private lateinit var itemsSearch: List<String>
@@ -56,7 +63,8 @@ class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
 
     private fun setUpCityList() {
         cityList.layoutManager = LinearLayoutManager(context)
-        cityAdapter = CityAdapter(list, mContext)
+        cityAdapter =
+            CityAdapter(list, mContext)
         cityList.adapter = cityAdapter
     }
 
@@ -109,7 +117,11 @@ class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
     }
 
     private fun loadWeatherData(city: String) {
-        val call: Call<CityDataModel> = ApiClient.getClient.getCityData(city, "metric")
+        val repository = NetworkRepository(ApiClient)
+        val presenter = SearchPresenterImpl(this, repository)
+
+        presenter.fetchSearchResults(city)
+        /*val call: Call<CityDataModel> = ApiClient.getClient.getCityData(city, "metric")
 
         call.enqueue(object : Callback<CityDataModel> {
 
@@ -130,7 +142,34 @@ class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
                 println(t?.localizedMessage + t?.cause + t?.message)
             }
 
-        })
+        })*/
+    }
+
+    override fun displaySearchResults(searchResults: CityDataModel) {
+        if (searchResults != null) {
+            list.add(searchResults)
+            cityList.adapter?.notifyDataSetChanged()
+        }
+    }
+
+    override fun displayError() {
+        view?.rootView?.let {
+            Snackbar.make(
+                it,
+                "Error loading data from Repository",
+                Snackbar.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    override fun displayError(s: String?) {
+        view?.rootView?.let {
+            Snackbar.make(
+                it,
+                s.toString(),
+                Snackbar.LENGTH_SHORT
+            ).show()
+        }
     }
 
 }

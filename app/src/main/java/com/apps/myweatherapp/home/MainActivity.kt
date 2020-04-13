@@ -7,8 +7,8 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import com.apps.myweatherapp.R
-import com.apps.myweatherapp.location.LocationFragment
-import com.apps.myweatherapp.search.SearchFragment
+import com.apps.myweatherapp.location.view.LocationFragment
+import com.apps.myweatherapp.search.view.SearchFragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 
@@ -16,8 +16,10 @@ class MainActivity : AppCompatActivity() {
     lateinit var navigation: BottomNavigationView
     lateinit var windowView: Window
     private val fm = supportFragmentManager
-    val searchFragment: Fragment = SearchFragment()
-    val locationFragment: Fragment = LocationFragment()
+    val searchFragment: Fragment =
+        SearchFragment()
+    val locationFragment: Fragment =
+        LocationFragment()
     var active: Fragment = locationFragment
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,7 +59,8 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.action_location -> {
 
-                    fragment = LocationFragment()
+                    fragment =
+                        LocationFragment()
                     //loadFragment(fragment)
                     fm.beginTransaction().hide(active).show(locationFragment).commit();
                     active = locationFragment

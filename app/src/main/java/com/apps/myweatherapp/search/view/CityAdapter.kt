@@ -1,4 +1,4 @@
-package com.apps.myweatherapp.search
+package com.apps.myweatherapp.search.view
 
 import android.content.Context
 import android.view.LayoutInflater
@@ -8,6 +8,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.apps.myweatherapp.R
+import com.apps.myweatherapp.search.model.CityDataModel
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import kotlin.math.roundToInt

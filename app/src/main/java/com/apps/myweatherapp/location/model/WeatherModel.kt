@@ -1,4 +1,4 @@
-package com.apps.myweatherapp.location
+package com.apps.myweatherapp.location.model
 
 import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
